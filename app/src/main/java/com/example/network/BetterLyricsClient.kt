@@ -38,27 +38,43 @@ interface BetterLyricsApiService {
     ): BetterLyricsSearchResponse
 }
 
+interface LrcLibApiService {
+    @GET("get")
+    suspend fun getLyrics(
+        @Query("track_name") trackName: String,
+        @Query("artist_name") artistName: String,
+        @Query("duration") durationInSeconds: Long? = null
+    ): BetterLyricsSearchResponse
+
+    @GET("search")
+    suspend fun searchLyrics(
+        @Query("q") query: String
+    ): List<BetterLyricsSearchResponse>
+}
+
 object BetterLyricsClient {
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(6, TimeUnit.SECONDS)
+        .readTimeout(6, TimeUnit.SECONDS)
         .build()
 
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
+    // Primary premium BetterLyrics endpoint
     val api: BetterLyricsApiService = Retrofit.Builder()
-        .baseUrl("https://api.betterlyrics.org/v1/") // Primary stable BetterLyrics.org API Gateway endpoint
+        .baseUrl("https://api.betterlyrics.org/v1/") 
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
         .create(BetterLyricsApiService::class.java)
 
-    val fallbackApi: BetterLyricsApiService = Retrofit.Builder()
-        .baseUrl("https://lrclib.net/api/") // High-capacity fallback provider integrated by BetterLyrics
+    // High capacity fallback LrcLib provider integrated under BetterLyrics network spec
+    val fallbackApi: LrcLibApiService = Retrofit.Builder()
+        .baseUrl("https://lrclib.net/api/") 
         .client(okHttpClient)
         .addConverterFactory(MoshiConverterFactory.create(moshi))
         .build()
-        .create(BetterLyricsApiService::class.java)
+        .create(LrcLibApiService::class.java)
 }
