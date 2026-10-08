@@ -120,28 +120,12 @@ object MusicSourcesManager {
 
     suspend fun searchAllSources(query: String, source: SearchSource = SearchSource.ALL): List<Song> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
-        return@withContext searchYouTubei(query)
+        val songs = InnerTubeClient.searchMusic(query)
+        if (songs.isNotEmpty()) songs else getFallbackResults(query)
     }
 
     private suspend fun searchYouTubei(query: String): List<Song> {
-        return try {
-            val requestBody = YouTubeiSearchRequest(query = query)
-            val rawResponse = youtubeiApi?.search(requestBody)?.string() ?: return emptyList()
-            val adapter = moshi.adapter(Map::class.java)
-            val responseMap = adapter.fromJson(rawResponse) as? Map<*, *> ?: return emptyList()
-
-            val songs = mutableListOf<Song>()
-            extractSongsFromMap(responseMap, songs)
-            
-            if (songs.isNotEmpty()) {
-                songs.take(25)
-            } else {
-                getFallbackResults(query)
-            }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "YouTube-i search failed, using fallback results: ${e.message}")
-            getFallbackResults(query)
-        }
+        return InnerTubeClient.searchMusic(query).ifEmpty { getFallbackResults(query) }
     }
 
     private fun extractSongsFromMap(map: Map<*, *>, out: MutableList<Song>) {
