@@ -1,8 +1,10 @@
 package com.example
 
 import com.example.model.Song
+import com.example.network.AudioPlayerManager
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BottomPlayerBarTest {
@@ -31,5 +33,35 @@ class BottomPlayerBarTest {
         val fraction = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
 
         assertEquals(0.25f, fraction, 0.001f)
+    }
+
+    @Test
+    fun `test progress calculation fraction edge cases`() {
+        // Zero duration
+        val zeroFraction = if (0L > 0) (10000L.toFloat() / 0L.toFloat()).coerceIn(0f, 1f) else 0f
+        assertEquals(0f, zeroFraction, 0.001f)
+
+        // Overshoot position
+        val positionMs = 250000L
+        val durationMs = 200000L
+        val clampedFraction = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+        assertEquals(1.0f, clampedFraction, 0.001f)
+    }
+
+    @Test
+    fun `test initial default track assignment in audio manager`() {
+        val testInitial = Song(
+            id = "seed_mini_1",
+            title = "Chill Sunset",
+            artist = "Acoustic Vibes",
+            albumArtUrl = "https://example.com/sunset.jpg",
+            streamUrl = "https://example.com/sunset.mp3",
+            durationMs = 180000L
+        )
+
+        AudioPlayerManager.initializeDefaultTrackIfEmpty(testInitial)
+        val current = AudioPlayerManager.currentSong.value
+        assertNotNull(current)
+        assertTrue(AudioPlayerManager.playlist.value.isNotEmpty())
     }
 }

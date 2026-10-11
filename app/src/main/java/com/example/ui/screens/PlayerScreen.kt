@@ -46,6 +46,8 @@ fun PlayerScreen(
     isLiked: Boolean = false,
     onLikeToggle: () -> Unit,
     isBuffering: Boolean = false,
+    isMusicReady: Boolean = false,
+    loadingStatus: String = "",
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -60,6 +62,8 @@ fun PlayerScreen(
         syncedLyricsResult = lyricsRepository.fetchLyricsOnline(song)
     }
     val syncedLyrics = syncedLyricsResult.lines
+
+    val isCompletelyReady = isMusicReady && !isBuffering
 
     val repeatMode by AudioPlayerManager.repeatMode.collectAsState()
     val isShuffle by AudioPlayerManager.isShuffleEnabled.collectAsState()
@@ -476,22 +480,18 @@ fun PlayerScreen(
                         onClick = onPlayPauseToggle,
                         modifier = Modifier
                             .size(68.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
+                            )
+                            .testTag("full_player_play_pause")
                     ) {
-                        if (isBuffering) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(32.dp),
-                                strokeWidth = 3.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(38.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(38.dp)
+                        )
                     }
 
                     // Next Track
@@ -510,6 +510,41 @@ fun PlayerScreen(
                             contentDescription = "Repeat Mode: ${repeatMode.displayName}",
                             tint = if (repeatMode != RepeatMode.OFF) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+
+                // Loading status banner displayed under the play button and controls
+                AnimatedVisibility(
+                    visible = !isCompletelyReady,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                        modifier = Modifier
+                            .padding(top = 10.dp)
+                            .testTag("player_loading_status_indicator")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(13.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (loadingStatus.isNotBlank()) loadingStatus else "Loading audio...",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }

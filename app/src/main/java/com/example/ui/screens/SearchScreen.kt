@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Search
@@ -26,6 +27,7 @@ import com.example.data.MusicRepository
 import com.example.model.Song
 import com.example.network.AudioPlayerManager
 import com.example.network.MusicSourcesManager
+import com.example.network.InnerTuneSearchFilter
 import com.example.network.SearchSource
 import kotlinx.coroutines.delay
 
@@ -36,6 +38,7 @@ fun SearchScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedSource by remember { mutableStateOf(SearchSource.ALL) }
+    var selectedFilter by remember { mutableStateOf(InnerTuneSearchFilter.ALL) }
 
     val repository = remember { MusicRepository() }
     val defaultSongs = remember { repository.getSampleSongs() }
@@ -43,15 +46,20 @@ fun SearchScreen(
     var searchResults by remember { mutableStateOf<List<Song>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
 
-    // Live search trigger whenever searchQuery or selectedSource changes
-    LaunchedEffect(searchQuery, selectedSource) {
+    val currentSong by AudioPlayerManager.currentSong.collectAsState()
+    val isPlaying by AudioPlayerManager.isPlaying.collectAsState()
+    val isMusicReady by AudioPlayerManager.isMusicReady.collectAsState()
+    val isBuffering by AudioPlayerManager.isBuffering.collectAsState()
+
+    // Live search trigger whenever searchQuery, selectedSource, or selectedFilter changes
+    LaunchedEffect(searchQuery, selectedSource, selectedFilter) {
         if (searchQuery.isBlank()) {
             searchResults = defaultSongs
             isSearching = false
         } else {
             isSearching = true
             delay(300) // Debounce rapid typing
-            val liveResults = MusicSourcesManager.searchAllSources(searchQuery, selectedSource)
+            val liveResults = MusicSourcesManager.searchAllSources(searchQuery, selectedSource, selectedFilter)
             searchResults = if (liveResults.isNotEmpty()) liveResults else defaultSongs.filter {
                 it.title.contains(searchQuery, ignoreCase = true) || it.artist.contains(searchQuery, ignoreCase = true)
             }
@@ -101,6 +109,22 @@ fun SearchScreen(
             shape = RoundedCornerShape(14.dp),
             singleLine = true
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // InnerTune Filter Chips row
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+            items(InnerTuneSearchFilter.entries) { filter ->
+                FilterChip(
+                    selected = selectedFilter == filter,
+                    onClick = { selectedFilter = filter },
+                    label = { Text(filter.displayName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -207,13 +231,29 @@ fun SearchScreen(
                             }
 
                             // Play Action Button
-                            IconButton(onClick = { onSongSelected(song, searchResults) }) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = "Play",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(26.dp)
-                                )
+                            val isCurrent = currentSong?.id == song.id
+
+                            IconButton(onClick = {
+                                if (isCurrent) {
+                                    AudioPlayerManager.togglePlayPause()
+                                } else {
+                                    onSongSelected(song, searchResults)
+                                }
+                            }) {
+                                if (isCurrent && isBuffering) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(20.dp),
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = if (isCurrent && isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = if (isCurrent && isPlaying) "Pause" else "Play",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
                             }
 
                             // Add to Queue button

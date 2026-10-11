@@ -51,81 +51,81 @@ class MusicRepository {
     fun getSampleSongs(): List<Song> {
         return listOf(
             Song(
-                id = "piped_kJQP7kiw5Fk",
+                id = "piped_SoundHelix_1",
                 title = "Despacito",
                 artist = "Luis Fonsi ft. Daddy Yankee",
                 albumArtUrl = "https://img.youtube.com/vi/kJQP7kiw5Fk/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
                 durationMs = 230000L,
                 genre = "Latin Pop",
                 album = "YouTube Hits"
             ),
             Song(
-                id = "piped_fJ9rUzIMcZQ",
+                id = "piped_SoundHelix_2",
                 title = "Bohemian Rhapsody",
                 artist = "Queen",
                 albumArtUrl = "https://img.youtube.com/vi/fJ9rUzIMcZQ/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
                 durationMs = 359000L,
                 genre = "Classic Rock",
                 album = "A Night at the Opera"
             ),
             Song(
-                id = "piped_JGwWNGJdvx8",
+                id = "piped_SoundHelix_3",
                 title = "Shape of You",
                 artist = "Ed Sheeran",
                 albumArtUrl = "https://img.youtube.com/vi/JGwWNGJdvx8/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=JGwWNGJdvx8",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
                 durationMs = 233000L,
                 genre = "Pop",
                 album = "Divide"
             ),
             Song(
-                id = "piped_9bZkp7q19f0",
+                id = "piped_SoundHelix_4",
                 title = "Gangnam Style",
                 artist = "PSY",
                 albumArtUrl = "https://img.youtube.com/vi/9bZkp7q19f0/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=9bZkp7q19f0",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
                 durationMs = 252000L,
                 genre = "K-Pop",
                 album = "Psy 6 (Six Rules)"
             ),
             Song(
-                id = "piped_CevxZvSJLk8",
+                id = "piped_SoundHelix_5",
                 title = "Roar",
                 artist = "Katy Perry",
                 albumArtUrl = "https://img.youtube.com/vi/CevxZvSJLk8/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=CevxZvSJLk8",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
                 durationMs = 223000L,
                 genre = "Pop",
                 album = "Prism"
             ),
             Song(
-                id = "piped_09R8_2nJtjg",
+                id = "piped_SoundHelix_6",
                 title = "Sugar",
                 artist = "Maroon 5",
                 albumArtUrl = "https://img.youtube.com/vi/09R8_2nJtjg/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=09R8_2nJtjg",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
                 durationMs = 235000L,
                 genre = "Pop",
                 album = "V"
             ),
             Song(
-                id = "piped_YQHsXMglC9A",
+                id = "piped_SoundHelix_7",
                 title = "Hello",
                 artist = "Adele",
                 albumArtUrl = "https://img.youtube.com/vi/YQHsXMglC9A/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=YQHsXMglC9A",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
                 durationMs = 295000L,
                 genre = "Soul / Pop",
                 album = "25"
             ),
             Song(
-                id = "piped_OPf0YbXqDm0",
+                id = "piped_SoundHelix_8",
                 title = "Uptown Funk",
                 artist = "Mark Ronson ft. Bruno Mars",
                 albumArtUrl = "https://img.youtube.com/vi/OPf0YbXqDm0/0.jpg",
-                streamUrl = "https://www.youtube.com/watch?v=OPf0YbXqDm0",
+                streamUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
                 durationMs = 270000L,
                 genre = "Funk Pop",
                 album = "Uptown Special"

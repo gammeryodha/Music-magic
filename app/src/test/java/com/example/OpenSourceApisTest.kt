@@ -2,6 +2,8 @@ package com.example
 
 import com.example.data.LyricsRepository
 import com.example.model.Song
+import com.example.network.InnerTubeClient
+import com.example.network.InnerTuneSearchFilter
 import com.example.network.MusicSourcesManager
 import com.example.network.SearchSource
 import kotlinx.coroutines.runBlocking
@@ -20,6 +22,15 @@ class OpenSourceApisTest {
         assertNotNull(firstTrack.title)
         assertNotNull(firstTrack.artist)
         assertTrue(firstTrack.streamUrl.startsWith("http"))
+    }
+
+    @Test
+    fun `test MusicSourcesManager search with InnerTune category filter`() = runBlocking {
+        val songsFilter = MusicSourcesManager.searchAllSources("Coldplay", SearchSource.ALL, InnerTuneSearchFilter.SONGS)
+        assertTrue(songsFilter.isNotEmpty())
+
+        val albumsFilter = MusicSourcesManager.searchAllSources("Coldplay", SearchSource.ALL, InnerTuneSearchFilter.ALBUMS)
+        assertTrue(albumsFilter.isNotEmpty())
     }
 
     @Test

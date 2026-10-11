@@ -55,6 +55,18 @@ object AuthManager {
                     authProvider = "google"
                 ),
                 passwordHash = "password123"
+            ),
+            RegisteredAccount(
+                user = User(
+                    id = "user_sunitha",
+                    name = "Sunitha Patchava",
+                    email = "patchavasunitha@gmail.com",
+                    avatarUrl = "https://picsum.photos/seed/sunitha/200/200",
+                    isGuest = false,
+                    plan = "VIP Listener",
+                    authProvider = "google"
+                ),
+                passwordHash = "password123"
             )
         )
 

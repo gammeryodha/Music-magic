@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stream
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,14 +37,32 @@ fun HomeScreen(
 ) {
     val currentUser by AuthManager.currentUser.collectAsState()
     val repository = remember { MusicRepository() }
+    val allSampleSongs = remember { repository.getSampleSongs() }
     val recentSongs = remember { repository.getRecentSongs() }
     val featuredPlaylists = remember { repository.getFeaturedPlaylists() }
+
+    val moodCategories = remember { listOf("All", "Energize", "Relax", "Workout", "Focus", "Commute") }
+    var selectedMood by remember { mutableStateOf("All") }
+
+    val displayedSongs = remember(selectedMood) {
+        if (selectedMood == "All") allSampleSongs
+        else allSampleSongs.filter {
+            when (selectedMood) {
+                "Energize" -> it.genre.contains("Pop", ignoreCase = true) || it.genre.contains("Rock", ignoreCase = true)
+                "Relax" -> it.genre.contains("Soul", ignoreCase = true) || it.title.contains("Vibes", ignoreCase = true)
+                "Workout" -> it.genre.contains("Funk", ignoreCase = true) || it.genre.contains("Pop", ignoreCase = true)
+                "Focus" -> it.genre.contains("Classic", ignoreCase = true) || it.genre.contains("Ambient", ignoreCase = true)
+                else -> true
+            }
+        }.ifEmpty { allSampleSongs }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        // User Greeting & Avatar Header
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -59,9 +78,10 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "What would you like to listen to today?",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Powered by InnerTune & YouTube Music",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -93,13 +113,47 @@ fun HomeScreen(
             }
         }
 
+        // InnerTune Mood / Activity Filter Chips (Signature InnerTune UI)
+        item {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(moodCategories) { mood ->
+                    FilterChip(
+                        selected = selectedMood == mood,
+                        onClick = { selectedMood = mood },
+                        label = { Text(mood, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                    )
+                }
+            }
+        }
+
+        // Quick Picks (InnerTune signature section)
+        item {
+            Text(
+                text = "Quick Picks",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(displayedSongs.take(6)) { song ->
+                    RecentSongCard(song = song, onClick = { onSongSelected(song, displayedSongs) })
+                }
+            }
+        }
+
+        // Recently Played
         item {
             Text(
                 text = "Recently Played",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             )
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -110,13 +164,14 @@ fun HomeScreen(
             }
         }
 
+        // Featured Playlists
         item {
             Text(
                 text = "Featured Playlists",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 6.dp)
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 featuredPlaylists.forEach { playlist ->
@@ -130,7 +185,7 @@ fun HomeScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -139,10 +194,10 @@ fun HomeScreen(
 fun RecentSongCard(song: Song, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(130.dp)
+            .width(134.dp)
             .clickable { onClick() }
             .testTag("recent_song_${song.id}"),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(14.dp)
     ) {
         Column(modifier = Modifier.padding(8.dp)) {
             AsyncImage(
@@ -150,8 +205,8 @@ fun RecentSongCard(song: Song, onClick: () -> Unit) {
                 contentDescription = song.title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(114.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(118.dp)
+                    .clip(RoundedCornerShape(10.dp))
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
@@ -178,7 +233,7 @@ fun PlaylistRow(playlist: Playlist, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(14.dp)
     ) {
         Row(
             modifier = Modifier.padding(10.dp),
@@ -190,7 +245,7 @@ fun PlaylistRow(playlist: Playlist, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(54.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(10.dp))
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {

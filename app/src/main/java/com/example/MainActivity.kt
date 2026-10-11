@@ -27,13 +27,9 @@ import com.example.data.FirestoreManager
 import com.example.data.MusicRepository
 import com.example.model.Song
 import com.example.network.AudioPlayerManager
-import com.example.ui.components.AdMobBannerAd
-import com.example.ui.components.AdMobInterstitialHelper
 import com.example.ui.components.BottomPlayerBar
-import com.example.ui.components.isAdSupported
 import com.example.ui.screens.*
 import com.example.ui.theme.MusicAppTheme
-import com.google.android.gms.ads.MobileAds
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,23 +39,32 @@ class MainActivity : ComponentActivity() {
         AuthManager.init(applicationContext)
         FirestoreManager.init(applicationContext)
 
-        // Initialize the AdMob backend.
-        if (isAdSupported()) {
-            try {
-                MobileAds.initialize(this)
-                AdMobInterstitialHelper.loadAd(this)
-            } catch (e: Throwable) {
-                Log.e("MainActivity", "Failed to initialize AdMob SDK: ${e.message}")
+        // Seed initial default track so persistent mini-player overlay is immediately ready
+        try {
+            val sampleSongs = MusicRepository().getSampleSongs()
+            if (sampleSongs.isNotEmpty()) {
+                AudioPlayerManager.initializeDefaultTrackIfEmpty(sampleSongs.first())
             }
+        } catch (e: Throwable) {
+            Log.w("MainActivity", "Initial track seed: ${e.message}")
         }
 
         setContent {
             MusicAppTheme {
-                MainAppContent(
-                    onLogout = {
-                        AuthManager.signOut()
-                    }
-                )
+                val currentUser by AuthManager.currentUser.collectAsState()
+                if (currentUser == null) {
+                    LoginScreen(
+                        onSignInSuccess = {
+                            // User authenticated successfully
+                        }
+                    )
+                } else {
+                    MainAppContent(
+                        onLogout = {
+                            AuthManager.signOut()
+                        }
+                    )
+                }
             }
         }
     }
@@ -70,17 +75,16 @@ fun MainAppContent(
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
     val repository = remember { MusicRepository() }
 
     var selectedTab by remember { mutableIntStateOf(0) }
     var showFullPlayerScreen by remember { mutableStateOf(false) }
 
-    var songSelectionCount by remember { mutableIntStateOf(0) }
-
     val currentSong by AudioPlayerManager.currentSong.collectAsState()
     val isPlaying by AudioPlayerManager.isPlaying.collectAsState()
     val isBuffering by AudioPlayerManager.isBuffering.collectAsState()
+    val isMusicReady by AudioPlayerManager.isMusicReady.collectAsState()
+    val loadingStatus by AudioPlayerManager.loadingStatus.collectAsState()
     val playbackPositionMs by AudioPlayerManager.playbackPositionMs.collectAsState()
     val durationMs by AudioPlayerManager.durationMs.collectAsState()
 
@@ -96,17 +100,9 @@ fun MainAppContent(
         showFullPlayerScreen = false
     }
 
+    // Playback callback when user selects any song while browsing across all screens
     val onSongSelected: (Song, List<Song>) -> Unit = { song, queue ->
-        songSelectionCount++
-        val activityRef = activity
-        val shouldShowAd = songSelectionCount % 3 == 0 && activityRef != null
-        if (shouldShowAd && isAdSupported()) {
-            AdMobInterstitialHelper.showAd(activityRef) {
-                AudioPlayerManager.playSong(activityRef, song, queue)
-            }
-        } else {
-            AudioPlayerManager.playSong(context, song, queue)
-        }
+        AudioPlayerManager.playSong(context, song, queue)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -114,17 +110,20 @@ fun MainAppContent(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // Persistent Mini-Player Component
+                    // Persistent Mini-Player Overlay docked directly above the navigation bar
                     BottomPlayerBar(
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         playbackPositionMs = playbackPositionMs,
                         durationMs = durationMs,
                         onPlayPauseToggle = {
-                            AudioPlayerManager.togglePlayPause()
+                            AudioPlayerManager.togglePlayPause(context)
                         },
                         onSkipNext = {
                             AudioPlayerManager.playNext(context)
+                        },
+                        onSkipPrevious = {
+                            AudioPlayerManager.playPrevious(context)
                         },
                         onOpenFullPlayer = {
                             showFullPlayerScreen = true
@@ -134,17 +133,12 @@ fun MainAppContent(
                             currentSong?.let { repository.toggleLikeSong(it) }
                         },
                         isBuffering = isBuffering,
-                        visible = !showFullPlayerScreen
+                        isMusicReady = isMusicReady,
+                        loadingStatus = loadingStatus,
+                        visible = !showFullPlayerScreen && currentSong != null
                     )
 
-                    // AdMob banner ad rendered above the bottom navigation.
-                    AdMobBannerAd(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                    )
-
-                    // Navigation Bar
+                    // Bottom Navigation Bar
                     NavigationBar(
                         modifier = Modifier.testTag("bottom_navigation_bar"),
                         tonalElevation = 8.dp
@@ -203,7 +197,7 @@ fun MainAppContent(
             }
         }
 
-        // Full Screen Player Overlay (Edge-to-edge covering the entire viewport)
+        // Full Screen Player Overlay (Edge-to-edge covering the viewport with smooth transition)
         AnimatedVisibility(
             visible = showFullPlayerScreen && currentSong != null,
             enter = slideInVertically(initialOffsetY = { it }, animationSpec = tween(350)) + fadeIn(),
@@ -214,14 +208,16 @@ fun MainAppContent(
                     song = activeSong,
                     isPlaying = isPlaying,
                     playbackPositionMs = playbackPositionMs,
-                    onPlayPauseToggle = { AudioPlayerManager.togglePlayPause() },
+                    onPlayPauseToggle = { AudioPlayerManager.togglePlayPause(context) },
                     onSkipNext = { AudioPlayerManager.playNext(context) },
                     onSkipPrevious = { AudioPlayerManager.playPrevious(context) },
                     onPositionChange = { newPosition -> AudioPlayerManager.seekTo(newPosition) },
                     onClose = { showFullPlayerScreen = false },
                     isLiked = isCurrentSongLiked,
                     onLikeToggle = { repository.toggleLikeSong(activeSong) },
-                    isBuffering = isBuffering
+                    isBuffering = isBuffering,
+                    isMusicReady = isMusicReady,
+                    loadingStatus = loadingStatus
                 )
             }
         }
